@@ -1,73 +1,169 @@
-# Welcome to your Lovable project
 
-## Project info
+# RR Coin - Crypto Trading Dashboard
 
-**URL**: https://lovable.dev/projects/70155672-057a-479e-a645-f2c686f3a40f
+A modern React-based cryptocurrency trading platform with real-time data and portfolio management.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- 🚀 **Real-time Crypto Data**: Live cryptocurrency prices and market data
+- 📊 **Portfolio Management**: Track your holdings with P&L calculations
+- 💹 **Paper Trading**: Practice trading without real money
+- 🎨 **Modern UI**: Beautiful gradient design with smooth animations
+- 📱 **Responsive Design**: Works perfectly on all devices
+- ⚡ **Fast Performance**: Built with React and modern web technologies
 
-**Use Lovable**
+## Technology Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/70155672-057a-479e-a645-f2c686f3a40f) and start prompting.
+- **Frontend**: React 18, TypeScript, Tailwind CSS
+- **UI Components**: shadcn/ui, Lucide React icons
+- **Data Fetching**: React Query for efficient API calls
+- **Backend**: MySQL with PHP (for production)
+- **Styling**: Tailwind CSS with custom gradients
 
-Changes made via Lovable will be committed automatically to this repo.
+## MySQL Database Setup
 
-**Use your preferred IDE**
+### Database Schema
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```sql
+-- Create database
+CREATE DATABASE crypto;
+USE crypto;
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+-- Transactions table
+CREATE TABLE transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    currency VARCHAR(10) NOT NULL,
+    action ENUM('buy', 'sell') NOT NULL,
+    amount DECIMAL(20, 8) NOT NULL,
+    price DECIMAL(20, 8) NOT NULL,
+    total_value DECIMAL(20, 8) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+-- Holdings/Portfolio table
+CREATE TABLE holdings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    currency VARCHAR(10) NOT NULL UNIQUE,
+    quantity DECIMAL(20, 8) NOT NULL,
+    avg_price DECIMAL(20, 8) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 ```
 
-**Edit a file directly in GitHub**
+### PHP Backend Files
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The project includes PHP files for MySQL connectivity:
 
-**Use GitHub Codespaces**
+1. **trade.php** - Handles buy/sell transactions
+2. **transactions.php** - Retrieves portfolio holdings
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Database Configuration
 
-## What technologies are used for this project?
+Update the database connection in your PHP files:
 
-This project is built with:
+```php
+$conn = new mysqli("localhost", "your_username", "your_password", "crypto");
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Getting Started
 
-## How can I deploy this project?
+### Prerequisites
 
-Simply open [Lovable](https://lovable.dev/projects/70155672-057a-479e-a645-f2c686f3a40f) and click on Share -> Publish.
+- Node.js (v18 or higher)
+- MySQL Server
+- PHP (for backend API)
 
-## Can I connect a custom domain to my Lovable project?
+### Installation
 
-Yes, you can!
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd crypto-trading-app
+   ```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+3. **Set up MySQL database**
+   - Create the database using the schema above
+   - Update PHP files with your database credentials
+
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Access the application**
+   Open http://localhost:8080 in your browser
+
+## API Integration
+
+### Cryptocurrency Data
+The app fetches real-time data from CoinSwitch API:
+```
+https://cs-india.coinswitch.co/api/v2/external/csk_website/currencies
+```
+
+### Backend API Endpoints
+
+- `POST /trade.php` - Execute buy/sell transactions
+- `GET /transactions.php` - Get portfolio holdings
+
+## Features Overview
+
+### Dashboard
+- Real-time crypto prices
+- Top gainers and losers
+- Market overview cards
+
+### Portfolio
+- Current holdings display
+- Profit/Loss calculations
+- Average price tracking
+
+### Trading
+- Interactive buy/sell interface
+- Real-time total calculations
+- Transaction confirmation
+
+## Development Features
+
+- **Hot Reload**: Instant updates during development
+- **TypeScript**: Full type safety
+- **Modern React**: Hooks and functional components
+- **Responsive Design**: Mobile-first approach
+- **Performance Optimized**: Efficient state management
+
+## Deployment
+
+### Frontend Deployment
+```bash
+npm run build
+```
+
+### Backend Setup
+1. Upload PHP files to your web server
+2. Configure MySQL database
+3. Update CORS headers if needed
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support, email support@rrcoin.com or join our Discord community.
+
+---
+
+**Note**: This is a demo application for educational purposes. For production use, implement proper security measures, error handling, and data validation.
