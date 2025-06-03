@@ -19,9 +19,6 @@ export interface Holding {
   timestamp: string;
 }
 
-// Simulate database operations using localStorage
-// In production, these would be API calls to your PHP backend
-
 export const saveTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp'>): Transaction => {
   const transactions = getTransactions();
   const newTransaction: Transaction = {

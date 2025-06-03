@@ -46,7 +46,7 @@ const Index = () => {
 
   const fetchCryptoData = async () => {
     try {
-      const response = await fetch("https://cs-india.coinswitch.co/api/v2/external/csk_website/currencies");
+      const response = await fetch("YOUR_API_KEY");
       const data = await response.json();
       const currencies = data?.data?.currencies || [];
       const validCurrencies = currencies.filter((currency: CryptoData) => {
