@@ -98,14 +98,6 @@ $conn = new mysqli("localhost", "your_username", "your_password", "crypto");
 5. **Access the application**
    Open http://localhost:8080 in your browser
 
-## API Integration
-
-### Cryptocurrency Data
-The app fetches real-time data from CoinSwitch API:
-```
-https://cs-india.coinswitch.co/api/v2/external/csk_website/currencies
-```
-
 ### Backend API Endpoints
 
 - `POST /trade.php` - Execute buy/sell transactions
