@@ -2,6 +2,10 @@
 # RR Coin - Crypto Trading Dashboard
 
 A modern React-based cryptocurrency trading platform with real-time data and portfolio management.
+## Images
+![{8F9B4962-3631-477A-AE1E-604E83C37051}](https://github.com/user-attachments/assets/d92d3583-b33e-488d-bf0a-0cd4cdac48b2)
+![{A9E8B044-3B6A-454E-B27F-3CAE9DEB5C43}](https://github.com/user-attachments/assets/d0b46659-e1a4-47ae-b710-2c03c1e50171)
+![{F718F360-C491-4B02-8899-611F1A09F178}](https://github.com/user-attachments/assets/a321de13-a450-47f2-b4cd-1a7677d64044)
 
 ## Features
 
