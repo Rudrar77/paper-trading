@@ -1,0 +1,6 @@
+{
+  "projectId": "xunlyrcbjwvxulpqudqw",
+  "db": {
+    "shadow_database_url": "postgresql://postgres:OBz2EelVketRqmSe@db.xunlyrcbjwvxulpqudqw.supabase.co:5432/postgres"
+  }
+}

@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import * as dbUtil from '@/utils/database';
 
 export interface Holding {
   currency: string;
@@ -21,12 +22,10 @@ export const useTrading = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const loadHoldings = useCallback(() => {
+  const loadHoldings = useCallback(async () => {
     try {
-      const savedHoldings = localStorage.getItem('cryptoHoldings');
-      if (savedHoldings) {
-        setHoldings(JSON.parse(savedHoldings));
-      }
+      const loadedHoldings = await dbUtil.getHoldings();
+      setHoldings(loadedHoldings);
     } catch (error) {
       console.error('Failed to load holdings:', error);
       toast({
@@ -37,9 +36,9 @@ export const useTrading = () => {
     }
   }, [toast]);
 
-  const saveHoldings = useCallback((newHoldings: Holding[]) => {
+  const saveHoldings = useCallback(async (newHoldings: Holding[]) => {
     try {
-      localStorage.setItem('cryptoHoldings', JSON.stringify(newHoldings));
+      await dbUtil.saveHoldings(newHoldings);
       setHoldings(newHoldings);
     } catch (error) {
       console.error('Failed to save holdings:', error);
@@ -105,20 +104,17 @@ export const useTrading = () => {
         }
       }
 
-      // Save transaction log
-      const transactions = JSON.parse(localStorage.getItem('cryptoTransactions') || '[]');
-      transactions.push({
-        id: Date.now().toString(),
+      // Save transaction log to Supabase
+      await dbUtil.saveTransaction({
         currency,
         action,
         amount,
         price,
-        total_value: amount * price,
-        timestamp: new Date().toISOString()
+        total_value: amount * price
       });
-      localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
 
-      saveHoldings(updatedHoldings);
+      // Save holdings
+      await saveHoldings(updatedHoldings);
       
       toast({
         title: "Trade Successful",

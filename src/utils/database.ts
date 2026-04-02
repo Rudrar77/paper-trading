@@ -1,6 +1,6 @@
 
-// Database utility functions to simulate MySQL connectivity
-// In a real application, these would connect to your MySQL backend
+// Database utility functions using Supabase
+import { supabase } from '@/lib/supabase';
 
 export interface Transaction {
   id: string;
@@ -19,32 +19,126 @@ export interface Holding {
   timestamp: string;
 }
 
-export const saveTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp'>): Transaction => {
-  const transactions = getTransactions();
-  const newTransaction: Transaction = {
-    ...transaction,
-    id: Date.now().toString(),
-    timestamp: new Date().toISOString()
+export const saveTransaction = async (transaction: Omit<Transaction, 'id' | 'timestamp'>): Promise<Transaction> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert({
+      user_id: user.id,
+      ...transaction,
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    id: data.id.toString(),
+    currency: data.currency,
+    action: data.action,
+    amount: data.amount,
+    price: data.price,
+    total_value: data.total_value,
+    timestamp: data.created_at
   };
+};
+
+export const getTransactions = async (): Promise<Transaction[]> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  transactions.push(newTransaction);
-  localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
+  if (userError || !user) {
+    console.warn('User not authenticated, returning empty transactions');
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to fetch transactions:', error);
+    return [];
+  }
+
+  return (data || []).map(t => ({
+    id: t.id.toString(),
+    currency: t.currency,
+    action: t.action,
+    amount: t.amount,
+    price: t.price,
+    total_value: t.total_value,
+    timestamp: t.created_at
+  }));
+};
+
+export const getHoldings = async (): Promise<Holding[]> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  return newTransaction;
+  if (userError || !user) {
+    console.warn('User not authenticated, returning empty holdings');
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('holdings')
+    .select('*')
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Failed to fetch holdings:', error);
+    return [];
+  }
+
+  return (data || []).map(h => ({
+    currency: h.currency,
+    quantity: h.quantity.toString(),
+    avg_price: h.avg_price.toString(),
+    timestamp: h.updated_at
+  }));
 };
 
-export const getTransactions = (): Transaction[] => {
-  const stored = localStorage.getItem('cryptoTransactions');
-  return stored ? JSON.parse(stored) : [];
-};
+export const saveHoldings = async (holdings: Holding[]): Promise<void> => {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    throw new Error('User not authenticated');
+  }
 
-export const getHoldings = (): Holding[] => {
-  const stored = localStorage.getItem('cryptoHoldings');
-  return stored ? JSON.parse(stored) : [];
-};
+  // Delete all existing holdings for the user
+  await supabase
+    .from('holdings')
+    .delete()
+    .eq('user_id', user.id);
 
-export const saveHoldings = (holdings: Holding[]): void => {
-  localStorage.setItem('cryptoHoldings', JSON.stringify(holdings));
+  // Insert new holdings
+  if (holdings.length > 0) {
+    const { error } = await supabase
+      .from('holdings')
+      .insert(
+        holdings.map(h => ({
+          user_id: user.id,
+          currency: h.currency,
+          quantity: parseFloat(h.quantity),
+          avg_price: parseFloat(h.avg_price),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+      );
+
+    if (error) {
+      throw error;
+    }
+  }
 };
 
 export const calculatePortfolioValue = (holdings: Holding[], currentPrices: { [key: string]: number }): number => {

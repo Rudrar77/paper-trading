@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingUp, TrendingDown, Wallet, Coins, ChartLine, Rocket, Plus, Minus, Calculator, Check, X, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import * as dbUtil from '@/utils/database';
 
 interface CryptoData {
   currency: string;
@@ -46,7 +47,7 @@ const Index = () => {
 
   const fetchCryptoData = async () => {
     try {
-      const response = await fetch("YOUR_API_KEY");
+      const response = await fetch("https://cs-india.coinswitch.co//api/v2/external/csk_website/currencies");
       const data = await response.json();
       const currencies = data?.data?.currencies || [];
       const validCurrencies = currencies.filter((currency: CryptoData) => {
@@ -68,20 +69,30 @@ const Index = () => {
 
   const loadHoldings = async () => {
     try {
-      // In a real app, this would connect to your PHP backend
-      // For demo purposes, we'll use localStorage
-      const savedHoldings = localStorage.getItem('cryptoHoldings');
-      if (savedHoldings) {
-        setHoldings(JSON.parse(savedHoldings));
-      }
+      const savedHoldings = await dbUtil.getHoldings();
+      setHoldings(savedHoldings);
     } catch (error) {
       console.error('Failed to load holdings', error);
+      toast({
+        title: "Error",
+        description: "Failed to load portfolio data from Supabase",
+        variant: "destructive",
+      });
     }
   };
 
-  const saveHoldings = (newHoldings: Holding[]) => {
-    localStorage.setItem('cryptoHoldings', JSON.stringify(newHoldings));
-    setHoldings(newHoldings);
+  const saveHoldings = async (newHoldings: Holding[]) => {
+    try {
+      await dbUtil.saveHoldings(newHoldings);
+      setHoldings(newHoldings);
+    } catch (error) {
+      console.error('Failed to save holdings to Supabase', error);
+      toast({
+        title: "Error",
+        description: "Failed to save portfolio data",
+        variant: "destructive",
+      });
+    }
   };
 
   const executeTrade = async (action: 'buy' | 'sell', currency: string) => {
@@ -141,18 +152,30 @@ const Index = () => {
         }
       }
 
-      saveHoldings(updatedHoldings);
+      // Save transaction to Supabase
+      await dbUtil.saveTransaction({
+        currency,
+        action,
+        amount,
+        price,
+        total_value: total
+      });
+
+      // Save holdings to Supabase
+      await saveHoldings(updatedHoldings);
+      
       setActiveTradeRow(null);
       setTradeAmounts({ ...tradeAmounts, [currency]: '' });
       
       toast({
         title: "Trade Successful",
-        description: `${action === 'buy' ? 'Bought' : 'Sold'} ${amount} ${currency}`,
+        description: `${action === 'buy' ? 'Bought' : 'Sold'} ${amount} ${currency} at ₹${price.toLocaleString('en-IN')}`,
       });
     } catch (error) {
+      console.error('Trade execution failed:', error);
       toast({
         title: "Trade Failed",
-        description: "Please try again",
+        description: "Failed to execute trade. Check your internet connection.",
         variant: "destructive",
       });
     }
