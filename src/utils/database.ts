@@ -19,17 +19,66 @@ export interface Holding {
   timestamp: string;
 }
 
+const GUEST_TRANSACTIONS_KEY = 'paper_trading_guest_transactions';
+const GUEST_HOLDINGS_KEY = 'paper_trading_guest_holdings';
+
+const getCurrentUserId = async (): Promise<string | null> => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    return null;
+  }
+  return user.id;
+};
+
+const getGuestTransactions = (): Transaction[] => {
+  const raw = localStorage.getItem(GUEST_TRANSACTIONS_KEY);
+  if (!raw) return [];
+
+  try {
+    return JSON.parse(raw) as Transaction[];
+  } catch {
+    return [];
+  }
+};
+
+const setGuestTransactions = (transactions: Transaction[]): void => {
+  localStorage.setItem(GUEST_TRANSACTIONS_KEY, JSON.stringify(transactions));
+};
+
+const getGuestHoldings = (): Holding[] => {
+  const raw = localStorage.getItem(GUEST_HOLDINGS_KEY);
+  if (!raw) return [];
+
+  try {
+    return JSON.parse(raw) as Holding[];
+  } catch {
+    return [];
+  }
+};
+
+const setGuestHoldings = (holdings: Holding[]): void => {
+  localStorage.setItem(GUEST_HOLDINGS_KEY, JSON.stringify(holdings));
+};
+
 export const saveTransaction = async (transaction: Omit<Transaction, 'id' | 'timestamp'>): Promise<Transaction> => {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    throw new Error('User not authenticated');
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      ...transaction,
+      timestamp: new Date().toISOString(),
+    };
+
+    const existing = getGuestTransactions();
+    setGuestTransactions([newTransaction, ...existing]);
+    return newTransaction;
   }
 
   const { data, error } = await supabase
     .from('transactions')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       ...transaction,
       created_at: new Date().toISOString()
     })
@@ -52,17 +101,16 @@ export const saveTransaction = async (transaction: Omit<Transaction, 'id' | 'tim
 };
 
 export const getTransactions = async (): Promise<Transaction[]> => {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    console.warn('User not authenticated, returning empty transactions');
-    return [];
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return getGuestTransactions();
   }
 
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -82,17 +130,16 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 };
 
 export const getHoldings = async (): Promise<Holding[]> => {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    console.warn('User not authenticated, returning empty holdings');
-    return [];
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return getGuestHoldings();
   }
 
   const { data, error } = await supabase
     .from('holdings')
     .select('*')
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   if (error) {
     console.error('Failed to fetch holdings:', error);
@@ -108,17 +155,18 @@ export const getHoldings = async (): Promise<Holding[]> => {
 };
 
 export const saveHoldings = async (holdings: Holding[]): Promise<void> => {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    throw new Error('User not authenticated');
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    setGuestHoldings(holdings);
+    return;
   }
 
   // Delete all existing holdings for the user
   await supabase
     .from('holdings')
     .delete()
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   // Insert new holdings
   if (holdings.length > 0) {
@@ -126,7 +174,7 @@ export const saveHoldings = async (holdings: Holding[]): Promise<void> => {
       .from('holdings')
       .insert(
         holdings.map(h => ({
-          user_id: user.id,
+          user_id: userId,
           currency: h.currency,
           quantity: parseFloat(h.quantity),
           avg_price: parseFloat(h.avg_price),

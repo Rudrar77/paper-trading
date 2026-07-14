@@ -51,9 +51,9 @@ export async function testSupabaseConnection() {
 
     console.log('\n✅ Supabase setup looks good!');
     console.log('\nNext steps:');
-    console.log('1. Sign up for an account at http://localhost:5173/login');
+    console.log('1. Open the app at http://localhost:5173/');
     console.log('2. Create your first trade');
-    console.log('3. Check the database');
+    console.log('3. Check the database or local guest data');
     return true;
   } catch (error) {
     console.error('❌ Error testing Supabase:', error);
